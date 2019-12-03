@@ -1,7 +1,6 @@
 package Day2
 
 import scala.collection.immutable.Vector
-import scala.util.parsing.combinator._
 
 sealed trait OpCode
 
@@ -9,29 +8,12 @@ case class Add(left: Int, right:Int, dest: Int) extends OpCode
 case class Multiply(left: Int, right:Int, dest: Int) extends OpCode
 case class Terminate() extends OpCode
 
-class FullInstruction(raw: String) {
-  val OP_POS = 0
-  val LEFT_POS = 1
-  val RIGHT_POS = 2
-  val DEST_POS = 3
-  val content = raw.toString.split(',').map(_.toInt)
-  def getLeftSide = content(LEFT_POS)
-  def getRightSide = content(RIGHT_POS)
-  def getDest = content(DEST_POS)
-}
 
-class OpCodeParser extends RegexParsers {
-  def addInstruction: Parser[Add] = """0, \d, \d, \d""".r ^^ {str => {
-    val instr = new FullInstruction(str)
-    Add(instr.getLeftSide, instr.getRightSide, instr.getDest)
-  }
-  }
-}
-
-object ProgramAlarm1202 extends OpCodeParser {
+object ProgramAlarm1202 {
   val memory: Vector[Int] = Vector.empty
-  var program_counter: Int = 0
-  def executeInstruction(op: OpCode, left: Int, right: Int, dest: Int, memory: Vector[Int]): Option[Vector[Int]] = {
+  val initial_program_counter: Int = 0
+  val instruction_size = 4
+  def executeInstruction(op: OpCode, memory: Vector[Int]): Option[Vector[Int]] = {
     op match {
       case Terminate() => None
       case Add(left, right, dest) => Some(memory.updated(dest, left+right))
@@ -39,15 +21,24 @@ object ProgramAlarm1202 extends OpCodeParser {
     }
   }
 
-  def parseNextInstruction(memory: Vector[Int], pc: Int): OpCode = {
-
+  def parseNextInstruction(instruction: Vector[Int]): OpCode = {
+    val LEFT_POS = 1
+    val RIGHT_POS = 2
+    val DEST_POS = 3
+    if(instruction.contains(99)) {
+      Terminate()
+    }
+    instruction.head match {
+      case 0 => Add(instruction(LEFT_POS), instruction(RIGHT_POS), instruction(DEST_POS))
+      case 1 => Multiply(instruction(LEFT_POS), instruction(RIGHT_POS), instruction(DEST_POS))
+    }
   }
 
-  def step(memory: Vector[Int]): Vector[Int] = {
-    parseNextInstruction
+  def step(memory: Vector[Int], programCounter: Int): Option[Vector[Int]] = {
+    executeInstruction(parseNextInstruction(memory.slice(programCounter, programCounter+instruction_size)), memory)
   }
 
-  def runProgram(memory: Vector[Int]): Vector[Int] = {
-    step(memory).fold(memory)(runProgram(memory))
+  def runProgram(memory: Vector[Int], programCounter: Int): Vector[Int] = {
+    step(memory, initial_program_counter).fold(memory)(runProgram(memory, programCounter+4))
   }
 }
