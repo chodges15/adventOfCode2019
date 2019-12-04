@@ -53,9 +53,9 @@ class Grid(object):
 
             val = self.get_coord_val(coord)
             if coord == self.origin:
-                return Bcolors.FAIL + '+' + Bcolors.ENDC
+                return Bcolors.FAIL + 'O' + Bcolors.ENDC
             elif val == 0:
-                return Bcolors.OKBLUE + '0' + Bcolors.ENDC
+                return Bcolors.OKBLUE + '.' + Bcolors.ENDC
             elif val == 1:
                 return Bcolors.OKGREEN + '*' + Bcolors.ENDC
             else:
@@ -100,9 +100,9 @@ class Grid(object):
 
 
 class CrossedWires(object):
-    def __init__(self, wire1: str, wire2: str):
-        self.grid = Grid()
-        self.vectors = [self.parse_wire(wire1), self.parse_wire(wire2)]
+    def __init__(self, wire_list: List[str], grid_size: int):
+        self.grid = Grid(grid_size)
+        self.vectors = list(map(self.parse_wire, wire_list))
         map(self.grid.update_grid_with_vector_list, self.vectors)
 
     def parse_wire(self, wire: str) -> List[Vector]:
