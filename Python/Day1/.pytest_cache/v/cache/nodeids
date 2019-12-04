@@ -1,0 +1,17 @@
+[
+  "test_day1.py::test_example[12-2]",
+  "test_day1.py::test_example[14-2]",
+  "test_day1.py::test_example[1969-654]",
+  "test_day1.py::test_example[100756-335]",
+  "test_day1.py::test_example[100756-33583]",
+  "test_day1.py::test_example_fuel_requirements[12-2]",
+  "test_day1.py::test_example_fuel_requirements[14-2]",
+  "test_day1.py::test_example_fuel_requirements[1969-654]",
+  "test_day1.py::test_example_fuel_requirements[100756-33583]",
+  "test_day1.py::test_input_from_file",
+  "test_day1.py::test_part_1",
+  "test_day1.py::test_part_2",
+  "test_day1.py::test_example_final_fuel_requirements[14-2]",
+  "test_day1.py::test_example_final_fuel_requirements[1969-966]",
+  "test_day1.py::test_example_final_fuel_requirements[100756-50346]"
+]
