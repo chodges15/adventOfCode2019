@@ -49,7 +49,7 @@ class Grid(object):
         self.origin = (0, 0)
         self.grid = [[0 for x in range(0, self.half_axis_size * 2 * self.oversize_multiplier + 1)]
                      for y in range(0, self.half_axis_size * 2 * self.oversize_multiplier + 1)]
-        self.wire_point_list = []
+        self.wire_point_list = [[]]
         self.wires = 0
 
     def __repr__(self):
@@ -82,40 +82,34 @@ class Grid(object):
 
     def get_coord_val(self, coord: (int, int)) -> int:
         array_coord = self.get_array_coord_for_coord(coord)
-        return self.grid[array_coord[0]][array_coord[1]]
+        count = 0
+        for wire in self.wire_point_list:
+            if coord in wire:
+                count += 1
+        return count
 
-    def mark_vector(self, vector: Vector, current_point: (int, int)) -> (int, int):
+    def mark_vector(self, vector: Vector, current_point: (int, int), wire: int) -> (int, int):
         array_point = self.get_array_coord_for_coord(current_point)
         line_range: range = vector.calculate_vector_range(array_point)
         if vector.direction.isVertical():
             array_point = (array_point[0], array_point[1] + (line_range.step * vector.magnitude))
             for y in line_range:
-                self.grid[array_point[0]][y] += 1
+                self.wire_point_list[wire].append((array_point[0], y))
         else:
             array_point = (array_point[0] + line_range.step * vector.magnitude, array_point[1])
             for x in line_range:
-                try:
-                    self.grid[x][array_point[1]] += 1
-                except IndexError:
-                    print("Index error")
-                    exit(1)
+                self.wire_point_list[wire].append((x, array_point[1]))
         return self.get_coord_for_array_coord(array_point)
 
     def update_grid_with_vector_list(self, vector_list: List[Vector]):
         current_point = self.origin
+        self.wire_point_list.append([])
         for this_vector in vector_list:
-            current_point = self.mark_vector(this_vector, current_point)
+            current_point = self.mark_vector(this_vector, current_point, self.wires)
+        self.wires += 1
 
     def get_intersection_coordinates(self):
-        return [self.get_coord_for_array_coord((x, y))
-                for x, row in enumerate(self.grid)
-                for y, char in enumerate(row)
-                if char > 1]
-        # equivalent to:
-        # for x, row in enumerate(self.grid):
-        #     for y, char in enumerate(row):
-        #         if(char > 1):
-        #             print(char)
+        return list(set(self.wires[0]) & set(self.wires[1]))
 
 
 class CrossedWires(object):
