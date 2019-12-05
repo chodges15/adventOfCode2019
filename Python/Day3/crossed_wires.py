@@ -115,6 +115,8 @@ class Grid(object):
         return [self.get_coord_for_array_coord(coord) for coord in list(set(self.wire_point_list[0]) & set(self.wire_point_list[1]))]
 
 
+
+
 class CrossedWires(object):
     def __init__(self, wire_list: List[str], grid_size: int):
         self.grid = Grid(grid_size)
@@ -138,7 +140,8 @@ class CrossedWires(object):
         return self.grid.get_intersection_coordinates()
 
     def get_minimum_manhattan_distance(self) -> int:
-        return self.grid.get_intersection_coordinates()
+        return min([self.manhattan_distance(self.grid.origin, intersection)
+                    for intersection in self.get_intersections()])
 
 
     vectors: List[List[Vector]]
