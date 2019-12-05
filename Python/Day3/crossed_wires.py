@@ -32,7 +32,7 @@ class Vector(object):
             Direction.RIGHT: 1
         }
         current_point_on_axis = current_point[1 if self.direction.isVertical() else 0]
-        return range(current_point_on_axis,  # start
+        return range(current_point_on_axis + sign_value[self.direction]*1,  # start
                      current_point_on_axis + sign_value[self.direction]*(self.magnitude + 1),  # stop
                      sign_value[self.direction])  # step
 
@@ -42,11 +42,15 @@ class Vector(object):
 
 class Grid(object):
 
-    def __init__(self, half_axis_size=1000):
+    def __init__(self, half_axis_size=1000, oversize_multiplier=4):
         self.half_axis_size = half_axis_size
+        self.oversize_multiplier = oversize_multiplier
+        self.coordinate_shift = self.half_axis_size * self.oversize_multiplier
         self.origin = (0, 0)
-        self.grid = [[0 for x in range(0, self.half_axis_size * 2 + 1)]
-                     for y in range(0, self.half_axis_size * 2 + 1)]
+        self.grid = [[0 for x in range(0, self.half_axis_size * 2 * self.oversize_multiplier + 1)]
+                     for y in range(0, self.half_axis_size * 2 * self.oversize_multiplier + 1)]
+        self.wire_point_list = []
+        self.wires = 0
 
     def __repr__(self):
         def get_char_for_val(coord: (int, int)) -> str:
@@ -62,19 +66,19 @@ class Grid(object):
                 return Bcolors.WARNING + '#' + Bcolors.ENDC
 
         return_str = "\n\n\t(GRID):\n"
-        for y in range(self.half_axis_size, -self.half_axis_size, -1):
+        for y in range(self.half_axis_size*self.oversize_multiplier, -self.half_axis_size*self.oversize_multiplier, -1):
             return_str += "\t"
-            for x in range(-self.half_axis_size, self.half_axis_size):
+            for x in range(-self.half_axis_size*self.oversize_multiplier, self.half_axis_size*self.oversize_multiplier):
                 return_str += get_char_for_val((x, y))
             return_str += "\n"
 
         return return_str
 
     def get_array_coord_for_coord(self, coord: (int, int)) -> (int, int):
-        return coord[0] + self.half_axis_size, coord[1] + self.half_axis_size
+        return coord[0] + self.coordinate_shift, coord[1] + self.coordinate_shift
 
     def get_coord_for_array_coord(self, array_cord: (int, int)) -> (int, int):
-        return array_cord[0] - self.half_axis_size, array_cord[1] - self.half_axis_size
+        return array_cord[0] - self.coordinate_shift, array_cord[1] - self.coordinate_shift
 
     def get_coord_val(self, coord: (int, int)) -> int:
         array_coord = self.get_array_coord_for_coord(coord)
@@ -84,13 +88,17 @@ class Grid(object):
         array_point = self.get_array_coord_for_coord(current_point)
         line_range: range = vector.calculate_vector_range(array_point)
         if vector.direction.isVertical():
+            array_point = (array_point[0], array_point[1] + (line_range.step * vector.magnitude))
             for y in line_range:
                 self.grid[array_point[0]][y] += 1
-                array_point = (array_point[0], array_point[1] + (line_range.step * vector.magnitude))
         else:
+            array_point = (array_point[0] + line_range.step * vector.magnitude, array_point[1])
             for x in line_range:
-                self.grid[x][array_point[1]] += 1
-                array_point = (array_point[0] + line_range.step * vector.magnitude, array_point[1])
+                try:
+                    self.grid[x][array_point[1]] += 1
+                except IndexError:
+                    print("Index error")
+                    exit(1)
         return self.get_coord_for_array_coord(array_point)
 
     def update_grid_with_vector_list(self, vector_list: List[Vector]):
@@ -98,12 +106,27 @@ class Grid(object):
         for this_vector in vector_list:
             current_point = self.mark_vector(this_vector, current_point)
 
+    def get_intersection_coordinates(self):
+        return [self.get_coord_for_array_coord((x, y))
+                for x, row in enumerate(self.grid)
+                for y, char in enumerate(row)
+                if char > 1]
+        # equivalent to:
+        # for x, row in enumerate(self.grid):
+        #     for y, char in enumerate(row):
+        #         if(char > 1):
+        #             print(char)
+
 
 class CrossedWires(object):
     def __init__(self, wire_list: List[str], grid_size: int):
         self.grid = Grid(grid_size)
-        self.vectors = list(map(self.parse_wire, wire_list))
-        map(self.grid.update_grid_with_vector_list, self.vectors)
+        self.vectors = [self.parse_wire(wire) for wire in wire_list]
+        [self.grid.update_grid_with_vector_list(vector) for vector in self.vectors]
+
+    @staticmethod
+    def manhattan_distance(point1: (int, int), point2: (int, int)) -> int:
+        return abs(point2[0] - point1[0]) + abs(point2[1] - point1[1])
 
     def parse_wire(self, wire: str) -> List[Vector]:
         vector_list = []
@@ -113,6 +136,13 @@ class CrossedWires(object):
             vector.magnitude = int(raw_vector[1:])
             vector_list.append(vector)
         return vector_list
+
+    def get_intersections(self):
+        return self.grid.get_intersection_coordinates()
+
+    def get_minimum_manhattan_distance(self) -> int:
+        return self.grid.get_intersection_coordinates()
+
 
     vectors: List[List[Vector]]
     decode_direction = {
