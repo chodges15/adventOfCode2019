@@ -2,6 +2,7 @@
 from enum import Enum
 from typing import List
 from Python.Day3.bcolors import Bcolors
+from typing import List, Dict
 
 
 class Direction(Enum):
@@ -9,7 +10,8 @@ class Direction(Enum):
     RIGHT = 'R'
     UP = 'U'
     DOWN = 'D'
-    def isVertical(self):
+
+    def is_vertical(self):
         return self.value == 'U' or self.value == 'D'
 
 
@@ -31,7 +33,7 @@ class Vector(object):
             Direction.LEFT: -1,
             Direction.RIGHT: 1
         }
-        current_point_on_axis = current_point[1 if self.direction.isVertical() else 0]
+        current_point_on_axis = current_point[1 if self.direction.is_vertical() else 0]
         return range(current_point_on_axis + sign_value[self.direction]*1,  # start
                      current_point_on_axis + sign_value[self.direction]*(self.magnitude + 1),  # stop
                      sign_value[self.direction])  # step
@@ -49,6 +51,7 @@ class Grid(object):
         self.origin = (0, 0)
         self.wire_point_list = [[]]
         self.wires = 0
+        self.steps_to_coordinate: List[Dict] = [{}]
 
     def __repr__(self):
         def get_char_for_val(coord: (int, int)) -> str:
@@ -89,9 +92,7 @@ class Grid(object):
     def mark_vector(self, vector: Vector, current_point: (int, int), wire: int) -> (int, int):
         array_point = self.get_array_coord_for_coord(current_point)
         line_range: range = vector.calculate_vector_range(array_point)
-        if wire not in self.wire_point_list:
-            self.wire_point_list.append([])
-        if vector.direction.isVertical():
+        if vector.direction.is_vertical():
             array_point = (array_point[0], array_point[1] + (line_range.step * vector.magnitude))
             for y in line_range:
                 self.wire_point_list[wire].append((array_point[0], y))
@@ -107,14 +108,24 @@ class Grid(object):
 
     def update_grid_with_vector_list(self, vector_list: List[Vector]):
         current_point = self.origin
+        self.wire_point_list.append([])
+        self.steps_to_coordinate.append({})
         for this_vector in vector_list:
             current_point = self.mark_vector(this_vector, current_point, self.wires)
+        for step, coord in enumerate(self.wire_point_list[self.wires]):
+            self.steps_to_coordinate[self.wires][coord] = step \
+                if coord not in self.steps_to_coordinate[self.wires] \
+                else None
         self.wires += 1
 
     def get_intersection_coordinates(self):
         return [self.get_coord_for_array_coord(coord) for coord in list(set(self.wire_point_list[0]) & set(self.wire_point_list[1]))]
 
-
+    def get_path_step(self, wire: int, coordinate: (int, int)) -> int:
+        if wire in self.steps_to_coordinate:
+            return self.steps_to_coordinate[wire][coordinate]
+        else:
+            return 0
 
 
 class CrossedWires(object):
@@ -139,12 +150,15 @@ class CrossedWires(object):
     def get_intersections(self):
         return self.grid.get_intersection_coordinates()
 
-    def get_minimum_manhattan_distance(self) -> int:
+    def get_minimum_manhattan_distance_from_origin(self) -> int:
         return min([self.manhattan_distance(self.grid.origin, intersection)
                     for intersection in self.get_intersections()])
 
+    def get_fewest_steps_to_intersection(self) -> (int, int):
+        min([self.grid.get_path_step(0, intersection) + self.grid.get_path_step(1, intersection)
+             for intersection in self.get_intersections()])
 
-    vectors: List[List[Vector]]
+        vectors: List[List[Vector]]
     decode_direction = {
         'L': Direction.LEFT,
         'R': Direction.RIGHT,
