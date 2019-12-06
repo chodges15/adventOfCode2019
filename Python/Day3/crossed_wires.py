@@ -92,6 +92,7 @@ class Grid(object):
     def mark_vector(self, vector: Vector, current_point: (int, int), wire: int) -> (int, int):
         array_point = self.get_array_coord_for_coord(current_point)
         line_range: range = vector.calculate_vector_range(array_point)
+        self.wire_point_list.append([]) if wire not in self.wire_point_list else None
         if vector.direction.is_vertical():
             array_point = (array_point[0], array_point[1] + (line_range.step * vector.magnitude))
             for y in line_range:
@@ -108,7 +109,6 @@ class Grid(object):
 
     def update_grid_with_vector_list(self, vector_list: List[Vector]):
         current_point = self.origin
-        self.wire_point_list.append([])
         self.steps_to_coordinate.append({})
         for this_vector in vector_list:
             current_point = self.mark_vector(this_vector, current_point, self.wires)
@@ -122,8 +122,8 @@ class Grid(object):
         return [self.get_coord_for_array_coord(coord) for coord in list(set(self.wire_point_list[0]) & set(self.wire_point_list[1]))]
 
     def get_path_step(self, wire: int, coordinate: (int, int)) -> int:
-        if wire in self.steps_to_coordinate:
-            return self.steps_to_coordinate[wire][coordinate]
+        if wire < len(self.steps_to_coordinate):
+            return self.steps_to_coordinate[wire][self.get_array_coord_for_coord(coordinate)] + 1
         else:
             return 0
 
@@ -155,7 +155,7 @@ class CrossedWires(object):
                     for intersection in self.get_intersections()])
 
     def get_fewest_steps_to_intersection(self) -> (int, int):
-        min([self.grid.get_path_step(0, intersection) + self.grid.get_path_step(1, intersection)
+        return min([self.grid.get_path_step(0, intersection) + self.grid.get_path_step(1, intersection)
              for intersection in self.get_intersections()])
 
         vectors: List[List[Vector]]
