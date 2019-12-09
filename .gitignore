@@ -2,4 +2,6 @@
 .idea/
 venv/
 __pycache__
+Scala/project/target
+target/
 
