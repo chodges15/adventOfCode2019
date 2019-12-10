@@ -2,7 +2,6 @@ package Day4
 
 object SecureContainer {
 
-
   def hasAtLeastTwoAdjacentDigits(password: String): Boolean =
     password.exists(c => password.indexOf(c.toString) != password.lastIndexOf(c.toString))
 
